@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 Game</title>
+    <style>
+        /* Add your CSS styles here */
+        /* Example: */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 320px;
+        }
+        .tile {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            height: 80px;
+            background-color: #EEE4DA;
+            border-radius: 5px;
+        }
+        .tile-2 { background-color: #EEE4DA; }
+        .tile-4 { background-color: #EDE0C8; }
+        .tile-8 { background-color: #F2B179; }
+        .tile-16 { background-color: #F59563; }
+        .tile-32 { background-color: #F67C5F; }
+        .tile-64 { background-color: #F65E3B; }
+        .tile-128 { background-color: #EDCF72; }
+        .tile-256 { background-color: #EDCC61; }
+        .tile-512 { background-color: #EDC850; }
+        .tile-1024 { background-color: #EDC53F; }
+        .tile-2048 { background-color: #EDC22E; }
+        .tile-empty { background-color: #CDC1B4; }
+        .game-over {
+            font-size: 36px;
+            font-weight: bold;
+            color: red;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <div id="highest-score">Highest Score: 0</div>
+    <div id="highest-sum">Highest Sum: 0</div>
+    <div class="board">
+        {% for row in board %}
+            {% for tile in row %}
+                <div class="tile tile-{{ tile if tile > 0 else 'empty' }}">{{ tile if tile > 0 else '' }}</div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+    <div id="game-over" class="game-over" style="display:none;">Game Over</div>
+    <button id="restart">Restart</button>
+    <button id="undo">Undo</button>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const scoreElem = document.getElementById('score');
+            const highestScoreElem = document.getElementById('highest-score');
+            const highestSumElem = document.getElementById('highest-sum');
+            const gameOverElem = document.getElementById('game-over');
+            const restartButton = document.getElementById('restart');
+            const undoButton = document.getElementById('undo');
+            const boardElem = document.querySelector('.board');
+
+            function updateBoard(board) {
+                boardElem.innerHTML = '';
+                board.forEach(row => {
+                    row.forEach(tile => {
+                        const tileDiv = document.createElement('div');
+                        tileDiv.className = `tile tile-${tile > 0 ? tile : 'empty'}`;
+                        tileDiv.textContent = tile > 0 ? tile : '';
+                        boardElem.appendChild(tileDiv);
+                    });
+                });
+            }
+
+            function updateScore(score) {
+                scoreElem.textContent = `Score: ${score}`;
+            }
+
+            function updateHighestScore(highestScore) {
+                highestScoreElem.textContent = `Highest Score: ${highestScore}`;
+            }
+
+            function updateHighestSum(highestSum) {
+                highestSumElem.textContent = `Highest Sum: ${highestSum}`;
+            }
+
+            function toggleGameOver(isGameOver) {
+                gameOverElem.style.display = isGameOver ? 'block' : 'none';
+            }
+
+            function restartGame() {
+                fetch('/restart')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateBoard(data.board);
+                        updateScore(data.score);
+                        updateHighestScore(data.highest_score);
+                        updateHighestSum(data.highest_sum);
+                        toggleGameOver(data.game_over);
+                    });
+            }
+
+            function undoMove() {
+                fetch('/undo')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateBoard(data.board);
+                        updateScore(data.score);
+                        updateHighestScore(data.highest_score);
+                        updateHighestSum(data.highest_sum);
+                        toggleGameOver(data.game_over);
+                    });
+            }
+
+            function move(direction) {
+                fetch('/move', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ direction: direction })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    updateBoard(data.board);
+                    updateScore(data.score);
+                    updateHighestScore(data.highest_score);
+                    updateHighestSum(data.highest_sum);
+                    toggleGameOver(data.game_over);
+                });
+            }
+
+            restartButton.addEventListener('click', restartGame);
+            undoButton.addEventListener('click', undoMove);
+            document.addEventListener('keydown', function(event) {
+                switch (event.key) {
+                    case 'ArrowUp':
+                        move('Up');
+                        break;
+                    case 'ArrowDown':
+                        move('Down');
+                        break;
+                    case 'ArrowLeft':
+                        move('Left');
+                        break;
+                    case 'ArrowRight':
+                        move('Right');
+                        break;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
